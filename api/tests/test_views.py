@@ -1,4 +1,5 @@
 from django.urls import reverse
+from rest_framework import status
 from rest_framework.test import APITestCase
 
 from api.models import Category, Company
@@ -13,8 +14,8 @@ class CategoryViewTests(APITestCase):
         category1 = Category.objects.create(company=self.company, name="カテゴリ１", parent_category=category2)
         
         response = self.client.get(reverse("category-list"))
-        
-        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]["name"], "カテゴリ１")
         self.assertEqual(response.data[0]["company"], self.company.id)
@@ -35,7 +36,7 @@ class CategoryViewTests(APITestCase):
 
         response = self.client.get(reverse("category-detail", args=[category.id]))
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "カテゴリ１")
         self.assertEqual(response.data["company"], self.company.id)
         self.assertEqual(response.data["id"], str(category.id))
@@ -49,7 +50,7 @@ class CategoryViewTests(APITestCase):
             "company": self.company.id
         })
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], "カテゴリ１")
         self.assertEqual(response.data["company"], self.company.id)
         self.assertIn("id", response.data)
@@ -65,7 +66,7 @@ class CategoryViewTests(APITestCase):
             "company": self.company.id
         })
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "カテゴリ１（更新）")
         self.assertEqual(response.data["company"], self.company.id)
         self.assertEqual(response.data["id"], str(category.id))
@@ -80,7 +81,7 @@ class CategoryViewTests(APITestCase):
 
         response = self.client.delete(reverse("category-detail", args=[category.id]))
         
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Category.objects.filter(id=category.id).exists())
 
     def test_create_duplicate(self):
@@ -91,13 +92,13 @@ class CategoryViewTests(APITestCase):
             "company": category.company.id
         })
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("non_field_errors", response.data)
     
     def test_retrieve_not_found(self):
         response = self.client.get(reverse("category-detail", args=["00000000-0000-0000-0000-000000000000"]))
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_destroy_keeps_children(self):
         category1 = Category.objects.create(company=self.company, name="カテゴリ１")
@@ -105,7 +106,7 @@ class CategoryViewTests(APITestCase):
 
         response = self.client.delete(reverse("category-detail", args=[category1.id]))
 
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Category.objects.filter(id=category1.id).exists())
         self.assertTrue(Category.objects.filter(id=category2.id).exists())
         category2.refresh_from_db()
