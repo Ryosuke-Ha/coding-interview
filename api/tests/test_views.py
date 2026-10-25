@@ -111,3 +111,20 @@ class CategoryViewTests(APITestCase):
         self.assertTrue(Category.objects.filter(id=category2.id).exists())
         category2.refresh_from_db()
         self.assertIsNone(category2.parent_category)
+    
+    def test_partial_update(self):
+        category = Category.objects.create(company=self.company, name="カテゴリ１")
+
+        response = self.client.patch(reverse("category-detail", args=[category.id]), data={
+            "name": "カテゴリ１（部分更新）"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], "カテゴリ１（部分更新）")
+        self.assertEqual(response.data["company"], self.company.id)
+        self.assertEqual(response.data["id"], str(category.id))
+        self.assertEqual(response.data["parent_category"], None)
+        self.assertIn("created_at", response.data)
+        self.assertIn("updated_at", response.data)
+        category.refresh_from_db()
+        self.assertEqual(category.name, "カテゴリ１（部分更新）")
